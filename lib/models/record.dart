@@ -20,6 +20,7 @@ class Record {
   List<String>? images; // store base64
   DateTime createdAt;
   DateTime updatedAt;
+  bool? syncPending; // DB-only flag, not serialized into .rec JSON
 
   Record({
     required this.id,
@@ -36,6 +37,7 @@ class Record {
     this.images,
     required this.createdAt,
     required this.updatedAt,
+    this.syncPending,
   });
 
   factory Record.fromJson(Map<String, dynamic> json) {
@@ -54,6 +56,7 @@ class Record {
       images: json['images'] != null ? List<String>.from(json['images']) : [],
       createdAt: DateTime.parse(json['createdAt']),
       updatedAt: DateTime.parse(json['updatedAt']),
+      syncPending: json['syncPending'] == true || json['syncPending'] == 1,
     );
   }
 

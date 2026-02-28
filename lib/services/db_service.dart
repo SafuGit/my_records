@@ -55,7 +55,8 @@ class DBService {
       final record = Record.fromJson({
         ...m,
         'images': jsonDecode(m['images'] as String),
-        'completed': (m['completed'] as int) == 1,
+        'completed': (m['completed'] as int?) == 1,
+        'syncPending': (m['syncPending'] as int?) == 1,
       });
       return record;
     }).toList();
