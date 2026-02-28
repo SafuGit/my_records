@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:my_records/models/record.dart';
+import 'package:my_records/screens/dashboard_screen.dart';
 import 'package:my_records/services/db_service.dart';
 
 void main() async {
@@ -20,18 +21,42 @@ void main() async {
   );
 
   await DBService.insertRecord(sample);
-  runApp(const MainApp());
+  runApp(const MyApp());
 }
 
-class MainApp extends StatelessWidget {
-  const MainApp({super.key});
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
-      home: Scaffold(
-        body: Center(
-          child: Text('Hello World!'),
+    return const MaterialApp(home: HomeScreen());
+  }
+}
+
+class HomeScreen extends StatelessWidget {
+  const HomeScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Center(
+        child: ElevatedButton(
+          onPressed: () {
+            // Navigate to DashboardScreen
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const DashboardScreen()),
+            );
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.white, // button background
+            foregroundColor: Colors.black, // text & icon color
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          ),
+          child: const Text(
+            'Go to Dashboard Screen',
+            style: TextStyle(color: Colors.black, fontSize: 18),
+          ),
         ),
       ),
     );
