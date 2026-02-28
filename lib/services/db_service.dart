@@ -61,4 +61,9 @@ class DBService {
       return record;
     }).toList();
   }
+
+  static Future<void> deleteRecord(String id) async {
+    final db = await getDb();
+    await db.delete('records', where: 'id = ?', whereArgs: [id]);
+  }
 }
