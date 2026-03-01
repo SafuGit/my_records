@@ -24,6 +24,7 @@ class _AddEditRecordScreenState extends State<AddEditRecordScreen> {
   late TextEditingController _maxMarksController;
   late TextEditingController _obtainedMarksController;
   late TextEditingController _amountController;
+  late TextEditingController _dateController;
 
   final ImagePicker _picker = ImagePicker();
 
@@ -43,6 +44,7 @@ class _AddEditRecordScreenState extends State<AddEditRecordScreen> {
     _maxMarksController = TextEditingController();
     _obtainedMarksController = TextEditingController();
     _amountController = TextEditingController();
+    _dateController = TextEditingController(text: _date.toLocal().toString().split(' ')[0]);
 
     if (isEditing) _loadRecord(widget.record!);
   }
@@ -53,6 +55,7 @@ class _AddEditRecordScreenState extends State<AddEditRecordScreen> {
     _descriptionController.text = r.description;
     _subjectController.text = r.subject;
     _date = r.date;
+    _dateController.text = _date.toLocal().toString().split(' ')[0];
     _maxMarksController.text = r.maxMarks?.toString() ?? '';
     _obtainedMarksController.text = r.obtainedMarks?.toString() ?? '';
     _amountController.text = r.amount?.toString() ?? '';
@@ -68,6 +71,7 @@ class _AddEditRecordScreenState extends State<AddEditRecordScreen> {
     _maxMarksController.dispose();
     _obtainedMarksController.dispose();
     _amountController.dispose();
+    _dateController.dispose();
     super.dispose();
   }
 
@@ -87,7 +91,12 @@ class _AddEditRecordScreenState extends State<AddEditRecordScreen> {
       firstDate: DateTime(now.year - 10),
       lastDate: DateTime(now.year + 10),
     );
-    if (picked != null) setState(() => _date = picked);
+    if (picked != null) {
+      setState(() {
+        _date = picked;
+        _dateController.text = _date.toLocal().toString().split(' ')[0];
+      });
+    }
   }
 
   void _removeImageAt(int index) {
@@ -246,7 +255,7 @@ class _AddEditRecordScreenState extends State<AddEditRecordScreen> {
                           child: AbsorbPointer(
                             child: TextFormField(
                               decoration: const InputDecoration(labelText: 'Date'),
-                              controller: TextEditingController(text: _date.toLocal().toString().split(' ')[0]),
+                              controller: _dateController,
                             ),
                           ),
                         ),
