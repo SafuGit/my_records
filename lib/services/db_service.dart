@@ -10,42 +10,46 @@ class DBService {
   static Future<Database> getDb() async {
     if (_db != null) return _db!;
     final path = join(await getDatabasesPath(), 'myrecords.db');
-    _db = await openDatabase(path, version: 1, onCreate: (db, version) async {
-      await db.execute('''
-      CREATE TABLE records(
-        id TEXT PRIMARY KEY,
-        type TEXT,
-        title TEXT,
-        description TEXT,
-        subject TEXT,
-        date TEXT,
-        maxMarks INTEGER,
-        obtainedMarks INTEGER,
-        completed INTEGER,
-        amount REAL,
-        category TEXT,
-        images TEXT,
-        createdAt TEXT,
-        updatedAt TEXT,
-        syncPending INTEGER
-      )
-      ''');
-    });
+    _db = await openDatabase(
+      path,
+      version: 1,
+      onCreate: (db, version) async {
+        await db.execute('''
+          CREATE TABLE records(
+            id TEXT PRIMARY KEY,
+            type TEXT,
+            title TEXT,
+            description TEXT,
+            subject TEXT,
+            date TEXT,
+            maxMarks INTEGER,
+            obtainedMarks INTEGER,
+            completed INTEGER,
+            amount REAL,
+            category TEXT,
+            images TEXT,
+            createdAt TEXT,
+            updatedAt TEXT,
+            syncPending INTEGER
+          )
+
+          CREATE INDEX idx_updatedAt ON records(updatedAt);
+          CREATE INDEX idx_type ON records(type);
+          CREATE INDEX idx_date ON records(date);
+        ''');
+      },
+    );
     return _db!;
   }
 
   static Future<void> insertRecord(Record r, {bool syncPending = true}) async {
     final db = await getDb();
-    await db.insert(
-      'records',
-      {
-        ...r.toJson(),
-        'syncPending': syncPending ? 1 : 0,
-        'images': jsonEncode(r.images ?? []),
-        'completed': r.completed == true ? 1 : 0,
-      },
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
+    await db.insert('records', {
+      ...r.toJson(),
+      'syncPending': syncPending ? 1 : 0,
+      'images': jsonEncode(r.images ?? []),
+      'completed': r.completed == true ? 1 : 0,
+    }, conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
   static Future<void> updateRecord(Record r, {bool syncPending = true}) async {
