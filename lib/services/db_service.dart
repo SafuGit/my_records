@@ -32,11 +32,10 @@ class DBService {
             updatedAt TEXT,
             syncPending INTEGER
           )
-
-          CREATE INDEX idx_updatedAt ON records(updatedAt);
-          CREATE INDEX idx_type ON records(type);
-          CREATE INDEX idx_date ON records(date);
         ''');
+        await db.execute('CREATE INDEX idx_updatedAt ON records(updatedAt)');
+        await db.execute('CREATE INDEX idx_type ON records(type)');
+        await db.execute('CREATE INDEX idx_date ON records(date)');
       },
     );
     return _db!;
