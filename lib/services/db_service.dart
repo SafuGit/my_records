@@ -48,6 +48,22 @@ class DBService {
     );
   }
 
+  static Future<void> updateRecord(Record r, {bool syncPending = true}) async {
+    final db = await getDb();
+    await db.update(
+      'records',
+      {
+        ...r.toJson(),
+        'syncPending': syncPending ? 1 : 0,
+        'images': jsonEncode(r.images ?? []),
+        'completed': r.completed == true ? 1 : 0,
+      },
+      where: 'id = ?',
+      whereArgs: [r.id],
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
   static Future<List<Record>> getAllRecords() async {
     final db = await getDb();
     final maps = await db.query('records');
