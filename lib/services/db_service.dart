@@ -82,6 +82,75 @@ class DBService {
     }).toList();
   }
 
+  static Future<List<Record>> getPendingSyncRecords() async {
+    final db = await getDb();
+    final maps = await db.query(
+      'records',
+      where: 'syncPending = ?',
+      whereArgs: [1],
+      orderBy: 'updatedAt ASC',
+    );
+    return maps.map((m) {
+      return Record.fromJson({
+        ...m,
+        'images': jsonDecode((m['images'] as String?) ?? '[]'),
+        'completed': (m['completed'] as int?) == 1,
+        'syncPending': (m['syncPending'] as int?) == 1,
+      });
+    }).toList();
+  }
+
+  static Future<Record?> getRecordById(String id) async {
+    final db = await getDb();
+    final maps = await db.query(
+      'records',
+      where: 'id = ?',
+      whereArgs: [id],
+      limit: 1,
+    );
+    if (maps.isEmpty) return null;
+    final m = maps.first;
+    return Record.fromJson({
+      ...m,
+      'images': jsonDecode((m['images'] as String?) ?? '[]'),
+      'completed': (m['completed'] as int?) == 1,
+      'syncPending': (m['syncPending'] as int?) == 1,
+    });
+  }
+
+  static Future<void> markAsSynced(String id) async {
+    final db = await getDb();
+    final nowIso = DateTime.now().toIso8601String();
+    await db.update(
+      'records',
+      {
+        'syncPending': 0,
+        'updatedAt': nowIso,
+      },
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  static Future<void> markAllAsSynced(List<String> ids) async {
+    if (ids.isEmpty) return;
+    final db = await getDb();
+    final nowIso = DateTime.now().toIso8601String();
+
+    await db.transaction((txn) async {
+      final batch = txn.batch();
+      for (final id in ids) {
+        batch.update(
+          'records',
+          {'syncPending': 0, 'updatedAt': nowIso},
+          where: 'id = ?',
+          whereArgs: [id],
+        );
+      }
+      await batch.commit(noResult: true);
+    });
+  }
+
   static Future<void> deleteRecord(String id) async {
     final db = await getDb();
     await db.delete('records', where: 'id = ?', whereArgs: [id]);
