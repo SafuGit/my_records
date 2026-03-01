@@ -19,6 +19,7 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   List<Record> _records = [];
   bool _isLoading = true;
+  String _filter = 'all';
 
   @override
   void initState() {
@@ -28,12 +29,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Future<void> loadRecords() async {
     setState(() => _isLoading = true);
-    final records = await DBService.getAllRecords();
-    if (!mounted) return;
-    setState(() {
-      _records = records;
-      _isLoading = false;
-    });
+    try {
+      final records = _filter == 'all'
+          ? await DBService.getAllRecords()
+          : await DBService.getRecordsByType(_filter);
+      if (!mounted) return;
+      setState(() {
+        _records = records;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to load records: $e')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
   }
 
   static String _formatDate(DateTime date) {
@@ -74,28 +87,90 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : RefreshIndicator(
-              onRefresh: loadRecords,
-              child: _records.isEmpty ? _emptyState() : _recordList(),
+          : Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  child: _buildFilterChips(),
+                ),
+                Expanded(
+                  child: RefreshIndicator(
+                    onRefresh: loadRecords,
+                    child: _records.isEmpty ? _emptyState() : _recordList(),
+                  ),
+                ),
+              ],
             ),
     );
   }
 
-  Widget _emptyState() => ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        children: const [
-          SizedBox(height: 140),
-          Icon(Icons.inbox_outlined, size: 64, color: Colors.black26),
-          SizedBox(height: 16),
-          Center(
-            child: Text(
-              'No records yet.\nTap + to add one.',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 16, color: Colors.black45),
+  Widget _buildFilterChips() {
+    const filters = [
+      {'key': 'all', 'label': 'All'},
+      {'key': 'exam', 'label': 'Exams'},
+      {'key': 'homework', 'label': 'Homework'},
+      {'key': 'due', 'label': 'Dues'},
+    ];
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: filters.map((f) {
+          final key = f['key']!;
+          final label = f['label']!;
+          return Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            child: ChoiceChip(
+              label: Text(label),
+              selected: _filter == key,
+              onSelected: (sel) {
+                if (!sel) return;
+                if (_filter == key) return;
+                setState(() => _filter = key);
+                loadRecords();
+              },
             ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  Widget _emptyState() {
+    final height = MediaQuery.of(context).size.height;
+    final title = switch (_filter) {
+      'all' => 'No records yet',
+      'exam' => 'No exam records yet',
+      'homework' => 'No homework records yet',
+      'due' => 'No dues yet',
+      _ => 'No records',
+    };
+
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      children: [
+        SizedBox(height: height * 0.22),
+        Icon(Icons.inbox_outlined, size: 64, color: Colors.black26),
+        const SizedBox(height: 16),
+        Center(
+          child: Text(
+            title,
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 18, color: Colors.black54),
           ),
-        ],
-      );
+        ),
+        const SizedBox(height: 8),
+        const Center(
+          child: Text(
+            'Tap + to add a new record',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 14, color: Colors.black38),
+          ),
+        ),
+      ],
+    );
+  }
 
   Widget _recordList() => ListView.builder(
         padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),

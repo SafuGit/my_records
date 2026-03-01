@@ -70,7 +70,7 @@ class DBService {
 
   static Future<List<Record>> getAllRecords() async {
     final db = await getDb();
-    final maps = await db.query('records');
+    final maps = await db.query('records', orderBy: 'updatedAt DESC');
     return maps.map((m) {
       final record = Record.fromJson({
         ...m,
@@ -79,6 +79,24 @@ class DBService {
         'syncPending': (m['syncPending'] as int?) == 1,
       });
       return record;
+    }).toList();
+  }
+
+  static Future<List<Record>> getRecordsByType(String type) async {
+    final db = await getDb();
+    final maps = await db.query(
+      'records',
+      where: 'type = ?',
+      whereArgs: [type],
+      orderBy: 'updatedAt DESC',
+    );
+    return maps.map((m) {
+      return Record.fromJson({
+        ...m,
+        'images': jsonDecode((m['images'] as String?) ?? '[]'),
+        'completed': (m['completed'] as int?) == 1,
+        'syncPending': (m['syncPending'] as int?) == 1,
+      });
     }).toList();
   }
 
