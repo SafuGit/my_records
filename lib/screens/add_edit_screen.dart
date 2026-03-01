@@ -2,9 +2,9 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:my_records/main.dart';
 
 import '../models/record.dart';
-import '../services/db_service.dart';
 
 class AddEditRecordScreen extends StatefulWidget {
   final Record? record;
@@ -139,15 +139,12 @@ class _AddEditRecordScreenState extends State<AddEditRecordScreen> {
     );
 
     try {
-      if (isEditing) {
-        await DBService.updateRecord(record);
-      } else {
-        await DBService.insertRecord(record, syncPending: true);
-      }
+      // addOrUpdateRecord handles both insert and update via upsert;
+      // it writes to memory first, then persists to SQLite async.
+      await syncManager.addOrUpdateRecord(record);
       if (!mounted) return;
       Navigator.of(context).pop(true);
     } catch (e) {
-      // Show error
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to save record: $e')),

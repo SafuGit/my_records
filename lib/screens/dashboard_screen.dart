@@ -3,9 +3,9 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:my_records/main.dart';
 
 import '../models/record.dart';
-import '../services/db_service.dart';
 import 'add_edit_screen.dart';
 import 'record_details_screen.dart';
 
@@ -30,22 +30,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Future<void> loadRecords() async {
     setState(() => _isLoading = true);
     try {
+      // Read from the in-memory store — O(n) list copy, no DB round-trip.
+      // syncManager.loadAll() was already awaited in main() so this is
+      // always up-to-date on first render.
+      final all = syncManager.getRecords().values.toList();
       final records = _filter == 'all'
-          ? await DBService.getAllRecords()
-          : await DBService.getRecordsByType(_filter);
+          ? all
+          : all.where((r) => r.type == _filter).toList();
+      // Sort descending by updatedAt to match previous DB ordering.
+      records.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
       if (!mounted) return;
-      setState(() {
-        _records = records;
-      });
+      setState(() => _records = records);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to load records: $e')),
       );
     } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
